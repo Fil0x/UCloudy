@@ -1,0 +1,1 @@
+__version__ = 'UCloudy 0.0.1a'
