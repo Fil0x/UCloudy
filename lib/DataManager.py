@@ -3,7 +3,6 @@ import json
 import errno
 import inspect
 
-import local
 import logger
 from lib.util import raw
 
@@ -23,7 +22,6 @@ def checkFile(f):
 class Manager(object):
     filedir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     basepath =  os.path.join(os.path.dirname(filedir), 'Configuration')
-    services = local.services
 
     def __init__(self):
         try:
@@ -48,24 +46,19 @@ class LocalDataManager(Manager):
 
     #Exposed functions
     @checkFile
-    def get_credentials(self, service):
+    def get_token(self):
         try:
-            return self.config[service]['credentials']
+            return self.config['token']
         except KeyError:
-            raise KeyError('{}: credentials are empty'.format(service))
+            raise KeyError('No token.')
 
-    def set_credentials(self, service, credentials):
-        if service == 'Dropbox':
-            self.config[service]['credentials'] = credentials[0]
-        elif service == 'GoogleDrive':
-            self.config[service]['credentials'] = credentials.to_json()
-        elif service == 'Pithos':
-            self.config[service]['credentials'] = credentials
+    def set_token(self, token):
+        self.config['token'] = token
         self.config.write()
 
-    def flush_credentials(self, service):
+    def flush_token(self):
         try:
-            del(self.config[service]['credentials'])
+            del(self.config['token'])
             self.config.write()
         except KeyError:
             pass
@@ -73,10 +66,6 @@ class LocalDataManager(Manager):
 
     def _create_config_file(self):
         config = ConfigObj(self.configPath)
-
-        config['Pithos'] = {}
-        config['Dropbox'] = {}
-        config['GoogleDrive'] = {}
 
         config.write()
         self.config = ConfigObj(self.configPath)

@@ -1,7 +1,7 @@
 import os
 import json
 
-import strings as s
+import strings
 from lib.util import raw
 from lib.DataManager import Manager
 
@@ -33,8 +33,6 @@ class ApplicationManager(Manager):
 
     def _create_config_file(self):
         config = ConfigObj(self.config_path)
-
-        config['Services'] = []
 
         config.write()
 
