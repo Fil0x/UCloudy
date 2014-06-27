@@ -1,3 +1,3 @@
 UCloudy
 ======
-Rename and delete files stored in a variety of cloud services with ease.
+Pithos+ cloud storage client written in Python 2.7 and PyQt 4.11.
