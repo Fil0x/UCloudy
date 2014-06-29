@@ -1,17 +1,63 @@
-﻿import re
-import os
+﻿import os
 import sys
-import socket
 import datetime
-import httplib2
-from StringIO import StringIO
 
-import strings
 import faults
+import strings
 from DataManager import LocalDataManager
 from ApplicationManager import ApplicationManager
 
 from kamaki.clients import ClientError
+
+
+class PithosUtilities(object):
+    def __init__(self, client):
+        self.client = client
+
+    def list_containers(self):
+        try:
+            folders = []
+            resp = self.client.list_containers()
+            for item in resp:
+                folders.append(item['name'])
+
+            return folders
+        except ClientError as e:
+            print e
+
+class PithosFile(object):
+    def __init__(self, container, filename, client):
+        self.client = client
+        self.client.container = container
+
+        self.filename = filename
+        self.container = container
+
+    def rename(self, new_filename):
+        try:
+            path = '/{}/{}'.format(self.container, new_filename)
+            response = self.client.object_move(self.filename,
+                                               destination=path)
+            self.filename = new_filename
+        except ClientError as e:
+            print e
+
+    def move(self, new_container):
+        try:
+            path = '/{}/{}'.format(new_container, self.filename)
+            response = self.client.object_move(self.filename,
+                                               destination=path)
+            self.container = new_container
+            self.client.container = new_container
+        except ClientError as e:
+            print e
+
+    def delete(self):
+        try:
+            response = self.client.object_delete(self.filename)
+        except ClientError as e:
+            print e
+
 
 class PithosUploader(object):
     def __init__(self, path, remote='pithos', offset=0, client=None):
@@ -43,10 +89,10 @@ class PithosUploader(object):
                     return
         except IOError as e:
             yield (2, None)
-            
+
     def complete_upload(self):
         history_entry = {}
-        
+
         objname = os.path.basename(self.path)
         objinfo = self.client.get_object_info(objname)
         history_entry['name'] = objname
@@ -54,5 +100,5 @@ class PithosUploader(object):
         history_entry['date'] = date[:date.index('.')]
         history_entry['path'] = self.remote
         history_entry['link'] = objinfo['x-object-public']
-        
+
         return history_entry

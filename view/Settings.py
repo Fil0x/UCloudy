@@ -1,6 +1,5 @@
 import sys
 
-import local
 import strings
 
 from PyQt4 import Qt

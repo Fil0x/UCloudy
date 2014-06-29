@@ -46,32 +46,22 @@ class VerifyThread(QtCore.QThread):
         else:
             self.emit(QtCore.SIGNAL('done'), 'Success', [self.service, r])
 
-def update_compact(f):
-    def wrapper(*args):
-        f(*args)
-        args[0].proxy.facade.sendNotification(AppFacade.AppFacade.COMPACT_SET_STATE,
-                                              args[0].viewComponent.get_states())
-    return wrapper
-
 class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.IMediator):
 
     NAME = 'MainWindowMediator'
 
     def __init__(self, viewComponent):
-        super(DetailedWindowMediator, self).__init__(DetailedWindowMediator.NAME, viewComponent)
+        super(MainWindowMediator, self).__init__(MainWindowMediator.NAME, viewComponent)
 
         self.proxy = self.facade.retrieveProxy(model.modelProxy.ModelProxy.NAME)
         self.g = globals.get_globals()
 
         self.viewComponent.exit_action.triggered.connect(self.onExit)
 
+        self.g.signals.set_folders.connect(self.onSetFolders)
 
-        # self.g.signals.network_error.connect(self.onNetworkError)
-        # self.g.signals.invalid_credentials.connect(self.onInvalidCredentials)
-
-    # @update_compact
-    # def onNetworkError(self, id):
-        # self.viewComponent.update_item_status([id, strings.network_error])
+    def onSetFolders(self, folders):
+        self.viewComponent.set_folders(folders)
 
     def onExit(self):
         self.facade.sendNotification(AppFacade.AppFacade.EXIT)

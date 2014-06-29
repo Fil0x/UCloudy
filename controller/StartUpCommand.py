@@ -21,13 +21,7 @@ class StartUpCommand(puremvc.patterns.command.SimpleCommand, puremvc.interfaces.
         proxy = model.modelProxy.ModelProxy()
         self.facade.registerProxy(proxy)
 
-        p = ApplicationManager()
-
-        used_services = p.get_services()
-        service_folders = proxy.get_service_folders(used_services)
-
-        # stored_settings = p.get_general_settings()
-        # s = Settings(used_services, service_folders, stored_settings)
-
         d = MainWindow(version.__version__)
         self.facade.registerMediator(MainWindowMediator(d))
+
+        proxy.initialize()

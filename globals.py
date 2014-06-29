@@ -1,6 +1,8 @@
 from PyQt4 import QtCore
 
 class Signals(QtCore.QObject):
+    set_folders = QtCore.pyqtSignal(list)
+
     network_error = QtCore.pyqtSignal(str)
     out_of_storage = QtCore.pyqtSignal(str)
     service_offline = QtCore.pyqtSignal(str)

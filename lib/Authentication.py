@@ -31,7 +31,7 @@ class AuthManager(Manager):
         dataManager = LocalDataManager()
 
         #A KeyError will be raised if there is no token.
-        access_token = dataManager.get_credentials('Pithos')
+        access_token = dataManager.get_token()
         try:
             dm = LocalDataManager()
             s = AstakosClient(access_token, strings.Pithos_AUTHURL)
