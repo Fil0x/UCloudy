@@ -7,7 +7,7 @@ class MyTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent)
 
         #Hax
-        self.data = [['']*(len(header)+1)] if not data else data
+        self.data = [['']*(len(header))] if not data else data
         self.header = header
 
     def rowCount(self, parent):
