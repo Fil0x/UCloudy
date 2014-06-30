@@ -22,19 +22,40 @@ class TaskThread(threading.Thread):
         self.logger.debug('Initialized')
 
         self.cached_client = None
+        self.pithos_util = None
 
     def run(self):
         while True:
             msg = self.in_queue.get()
-            if msg[0] in 'init':
+            if msg[0] == 'init_folders':
                 try:
                     if not self.cached_client:
                         self.logger.debug('No client available. Authenticating...')
                         self.cached_client = self.proxy.authenticate()
-                    s = PithosUtilities(self.cached_client)
-                    folders = s.list_containers()
+                        self.pithos_util = PithosUtilities(self.cached_client)
+                    self.folders = self.pithos_util.get_containers()
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_FOLDERS,
-                                                       [self.globals, folders])
+                                                       [self.globals, self.folders])
+                except (faults.InvalidAuth, KeyError):
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.INVALID_CREDENTIALS,
+                                                       [self.globals, id])
+                except faults.NetworkError:
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.NETWORK_ERROR,
+                                                       [self.globals, id])
+            elif msg[0] == 'init_objects':
+                try:
+                    if not self.cached_client:
+                        self.logger.debug('No client available. Authenticating...')
+                        self.cached_client = self.proxy.authenticate()
+                        self.pithos_util = PithosUtilities(self.cached_client)
+                    for folder in self.folders:
+                        objects = self.pithos_util.get_objects(folder)
+                        self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_OBJECTS,
+                                                           [self.globals, folder, objects])
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_ACTIVE_FOLDER,
+                                                           [self.globals])
                 except (faults.InvalidAuth, KeyError):
                     self.logger.debug('Authentication skipped')
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.INVALID_CREDENTIALS,

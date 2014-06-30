@@ -15,6 +15,12 @@ from lib.ApplicationManager import ApplicationManager
 
 import puremvc.patterns.proxy
 
+#Disable kamaki's logging
+import logging
+log1 = logging.getLogger("kamaki.clients.send")
+log1.setLevel(logging.WARNING)
+log2 = logging.getLogger("kamaki.clients.recv")
+log2.setLevel(logging.WARNING)
 
 class ModelProxy(puremvc.patterns.proxy.Proxy):
 
@@ -34,7 +40,8 @@ class ModelProxy(puremvc.patterns.proxy.Proxy):
 
     #Exposed functions
     def initialize(self):
-        self.task_queue.put('init')
+        self.task_queue.put(['init_folders'])
+        self.task_queue.put(['init_objects'])
     
     def add_token(self, token):
         dm = LocalDataManager()

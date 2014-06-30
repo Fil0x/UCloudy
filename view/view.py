@@ -54,14 +54,24 @@ class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.
         super(MainWindowMediator, self).__init__(MainWindowMediator.NAME, viewComponent)
 
         self.proxy = self.facade.retrieveProxy(model.modelProxy.ModelProxy.NAME)
+        self.logger = logger.logger_factory(self.__class__.__name__)
         self.g = globals.get_globals()
 
         self.viewComponent.exit_action.triggered.connect(self.onExit)
 
         self.g.signals.set_folders.connect(self.onSetFolders)
+        self.g.signals.set_objects.connect(self.onSetObjects)
+        self.g.signals.set_active_folder.connect(self.onSetActiveFolder)
 
     def onSetFolders(self, folders):
         self.viewComponent.set_folders(folders)
+        
+    def onSetObjects(self, data):
+        #data = [[folder_name, objects],...]
+        self.viewComponent.set_objects(*data)
+        
+    def onSetActiveFolder(self):
+        self.viewComponent.set_active_folder()
 
     def onExit(self):
         self.facade.sendNotification(AppFacade.AppFacade.EXIT)

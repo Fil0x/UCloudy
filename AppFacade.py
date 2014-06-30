@@ -9,6 +9,8 @@ class AppFacade(puremvc.patterns.facade.Facade):
     STARTUP = 'startup'
 
     SET_FOLDERS = 'set_ui_folders'
+    SET_OBJECTS = 'set_ui_objects_per_folder' 
+    SET_ACTIVE_FOLDER = 'set_ui_active_folder'
     
     SHOW_SETTINGS = 'show_settings'
 
@@ -41,6 +43,8 @@ class AppFacade(puremvc.patterns.facade.Facade):
         super(AppFacade, self).registerCommand(AppFacade.STARTUP, StartUpCommand)
 
         super(AppFacade, self).registerCommand(AppFacade.SET_FOLDERS, CommCommand)
+        super(AppFacade, self).registerCommand(AppFacade.SET_OBJECTS, CommCommand)
+        super(AppFacade, self).registerCommand(AppFacade.SET_ACTIVE_FOLDER, CommCommand)
 
         super(AppFacade, self).registerCommand(AppFacade.NETWORK_ERROR, ErrorCommand)
         super(AppFacade, self).registerCommand(AppFacade.SERVICE_OFFLINE, ErrorCommand)

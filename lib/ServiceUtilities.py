@@ -14,7 +14,7 @@ class PithosUtilities(object):
     def __init__(self, client):
         self.client = client
 
-    def list_containers(self):
+    def get_containers(self):
         try:
             folders = []
             resp = self.client.list_containers()
@@ -22,6 +22,18 @@ class PithosUtilities(object):
                 folders.append(item['name'])
 
             return folders
+        except ClientError as e:
+            print e
+            
+    def get_objects(self, container):
+        try:
+            objects = []
+            self.client.container = container
+            resp = self.client.list_objects()
+            for item in resp:
+                objects.append([item['name'], '20KB'])
+                
+            return objects
         except ClientError as e:
             print e
 
