@@ -31,11 +31,18 @@ class PithosUtilities(object):
             self.client.container = container
             resp = self.client.list_objects()
             for item in resp:
-                objects.append([item['name'], '20KB'])
+                objects.append([item['name'], self._bytesToReadable(item['bytes'])])
                 
             return objects
         except ClientError as e:
             print e
+            
+    def _bytesToReadable(self, bytes):
+        for x in ['bytes','KB','MB','GB']:
+            if bytes < 1024.0:
+                return "%3.1f %s" % (bytes, x)
+            bytes /= 1024.0
+        return "%3.1f %s" % (bytes, 'TB')
 
 class PithosFile(object):
     def __init__(self, container, filename, client):

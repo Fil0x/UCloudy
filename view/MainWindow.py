@@ -62,7 +62,8 @@ class MyTableModel(QtCore.QAbstractTableModel):
 
     def setData(self, index, value, role):
         #File renamed
-        new_filename = str(value.toString())
+        codec = QtCore.QTextCodec.codecForName('UTF-16')
+        new_filename = unicode(codec.fromUnicode(value.toString()), 'UTF-16')
         old_filename = self.data[self.folder][index.row()][index.column()]
         if not new_filename == old_filename:
             self.data[self.folder][index.row()][index.column()] = new_filename
@@ -118,7 +119,7 @@ class ListTableDelegate(BaseDelegate):
     def editorEvent(self, event, model, option, index):
         if event.type() == QtCore.QEvent.MouseButtonRelease:
             model = index.model()
-            print model.data[model.folder][index.row()][0]
+            # print model.data[model.folder][index.row()][0]
 
         return False
 
@@ -132,13 +133,23 @@ class MyTableView(QtGui.QTableView):
     def contextMenuEvent(self, event):
         menu = QtGui.QMenu(self)
 
-        Action = menu.addAction("I am an Action")
-        Action.triggered.connect(self.onClick)
-
+        #-----Delete menu-----
+        delete_action = menu.addAction(QtGui.QIcon('images/cancel.png'), "Delete")
+        delete_action.triggered.connect(self.onDelete)
+        #-----Move menu----
+        sub_menu = menu.addMenu(QtGui.QIcon('images/move.png'), 'Move')
+        folders = self.model().data.keys()
+        folders.remove(self.model().folder)
+        for i in folders:
+            sub_menu.addAction(str(i))
+        
         menu.exec_(event.globalPos())
 
-    def onClick(self):
-        print 'LOL'
+    def onDelete(self):
+        print 'delete'
+        
+    def onMove(self):
+        print 'move'
 
 class MainWindow(QtGui.QMainWindow):
 
