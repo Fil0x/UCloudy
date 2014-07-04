@@ -7,6 +7,7 @@ import AppFacade
 import threading
 from lib import faults
 from lib.ServiceUtilities import PithosUtilities
+from lib.ServiceUtilities import PithosFile
 
 
 class TaskThread(threading.Thread):
@@ -32,8 +33,7 @@ class TaskThread(threading.Thread):
                     if not self.cached_client:
                         self.logger.debug('No client available. Authenticating...')
                         self.cached_client = self.proxy.authenticate()
-                        self.pithos_util = PithosUtilities(self.cached_client)
-                    self.folders = self.pithos_util.get_containers()
+                    self.folders = PithosUtilities(self.cached_client).get_containers()
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_FOLDERS,
                                                        [self.globals, self.folders])
                 except (faults.InvalidAuth, KeyError):
@@ -49,13 +49,31 @@ class TaskThread(threading.Thread):
                     if not self.cached_client:
                         self.logger.debug('No client available. Authenticating...')
                         self.cached_client = self.proxy.authenticate()
-                        self.pithos_util = PithosUtilities(self.cached_client)
                     for folder in self.folders:
-                        objects = self.pithos_util.get_objects(folder)
+                        objects = PithosUtilities(self.cached_client).get_objects(folder)
                         self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_OBJECTS,
                                                            [self.globals, folder, objects])
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_ACTIVE_FOLDER,
                                                            [self.globals])
+                except (faults.InvalidAuth, KeyError):
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.INVALID_CREDENTIALS,
+                                                       [self.globals, id])
+                except faults.NetworkError:
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.NETWORK_ERROR,
+                                                       [self.globals, id])
+            elif msg[0] == 'rename_file':
+                try:
+                    if not self.cached_client:
+                        self.logger.debug('No client available. Authenticating...')
+                        self.cached_client = self.proxy.authenticate()
+                        self.pithos_util = PithosUtilities(self.cached_client)
+                    #msg[1] = [container, old-filename, new-filename]
+                    pithos_file = PithosFile(msg[1][0], msg[1][1], self.cached_client)
+                    pithos_file.rename(msg[1][2])
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.RENAME_FILE_COMPLETED,
+                                                       [self.globals])
                 except (faults.InvalidAuth, KeyError):
                     self.logger.debug('Authentication skipped')
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.INVALID_CREDENTIALS,

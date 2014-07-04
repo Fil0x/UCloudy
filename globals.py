@@ -5,6 +5,10 @@ class Signals(QtCore.QObject):
     set_objects = QtCore.pyqtSignal(list)
     set_active_folder = QtCore.pyqtSignal()
 
+    rename_completed = QtCore.pyqtSignal()
+    delete_completed = QtCore.pyqtSignal()
+    move_completed = QtCore.pyqtSignal()
+    
     network_error = QtCore.pyqtSignal(str)
     out_of_storage = QtCore.pyqtSignal(str)
     service_offline = QtCore.pyqtSignal(str)

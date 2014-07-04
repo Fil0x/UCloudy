@@ -37,9 +37,9 @@ class VerifyThread(QtCore.QThread):
     def run(self):
         try:
             r = self.flow.finish(self.auth_code)
-        except (rest.ErrorResponse, FlowExchangeError, Unauthorized) as e:
+        except Unauthorized as e:
             self.emit(QtCore.SIGNAL('done'), 'Error', [self.service, 'Invalid Code'])
-        except (rest.RESTSocketError, httplib2.ServerNotFoundError, AstakosClientException) as e:
+        except AstakosClientException as e:
             self.emit(QtCore.SIGNAL('done'), 'Error', [self.service, 'Network Error'])
         except Exception as e:
             self.emit(QtCore.SIGNAL('done'), 'Error', [self.service, 'Unknown'])
@@ -58,11 +58,16 @@ class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.
         self.g = globals.get_globals()
 
         self.viewComponent.exit_action.triggered.connect(self.onExit)
+        self.viewComponent.rename_signal.connect(self.onRename)
 
+        self.g.signals.rename_completed.connect(self.onRenameComplete)
         self.g.signals.set_folders.connect(self.onSetFolders)
         self.g.signals.set_objects.connect(self.onSetObjects)
         self.g.signals.set_active_folder.connect(self.onSetActiveFolder)
 
+    def onRenameComplete(self):
+        self.viewComponent.onRenameComplete()
+        
     def onSetFolders(self, folders):
         self.viewComponent.set_folders(folders)
         
@@ -73,6 +78,10 @@ class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.
     def onSetActiveFolder(self):
         self.viewComponent.set_active_folder()
 
+    def onRename(self, data):
+        #data = [container, old-filename, new-filename]
+        self.facade.sendNotification(AppFacade.AppFacade.RENAME_FILE, data)
+        
     def onExit(self):
         self.facade.sendNotification(AppFacade.AppFacade.EXIT)
         

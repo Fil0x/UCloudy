@@ -50,7 +50,16 @@ class ModelProxy(puremvc.patterns.proxy.Proxy):
     def delete_token(self):
         dm = LocalDataManager()
         dm.flush_token(service)
-    #End of exposed functions
-
-    def authenticate(self, ):
+    
+    def rename_file(self, data):
+        self.task_queue.put(['rename_file', data])
+     
+    def authenticate(self):
         return self.model.am.authenticate()
+
+        
+        
+        
+        
+        
+        
