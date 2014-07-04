@@ -8,3 +8,5 @@ logs/
 Configuration/
 build/
 dist/
+dist.rar
+build_exe.bat
