@@ -23,19 +23,22 @@ class TaskThread(threading.Thread):
         self.logger.debug('Initialized')
 
         self.cached_client = None
-        self.pithos_util = None
+        self.username = None
 
+    def _authenticate(self):
+        if not self.cached_client:
+            self.logger.debug('No client available. Authenticating...')
+            self.cached_client, self.username = self.proxy.authenticate()
+        
     def run(self):
         while True:
             msg = self.in_queue.get()
             if msg[0] == 'init_folders':
                 try:
-                    if not self.cached_client:
-                        self.logger.debug('No client available. Authenticating...')
-                        self.cached_client = self.proxy.authenticate()
+                    self._authenticate()
                     self.folders = PithosUtilities(self.cached_client).get_containers()
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_FOLDERS,
-                                                       [self.globals, self.folders])
+                                                       [self.globals, self.folders, self.username])
                 except (faults.InvalidAuth, KeyError):
                     self.logger.debug('Authentication skipped')
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.INVALID_CREDENTIALS,
@@ -46,9 +49,7 @@ class TaskThread(threading.Thread):
                                                        [self.globals, id])
             elif msg[0] == 'init_objects':
                 try:
-                    if not self.cached_client:
-                        self.logger.debug('No client available. Authenticating...')
-                        self.cached_client = self.proxy.authenticate()
+                    self._authenticate()
                     for folder in self.folders:
                         objects = PithosUtilities(self.cached_client).get_objects(folder)
                         self.proxy.facade.sendNotification(AppFacade.AppFacade.SET_OBJECTS,
@@ -65,10 +66,7 @@ class TaskThread(threading.Thread):
                                                        [self.globals, id])
             elif msg[0] == 'rename_file':
                 try:
-                    if not self.cached_client:
-                        self.logger.debug('No client available. Authenticating...')
-                        self.cached_client = self.proxy.authenticate()
-                        self.pithos_util = PithosUtilities(self.cached_client)
+                    self._authenticate()
                     #msg[1] = [container, old-filename, new-filename]
                     pithos_file = PithosFile(msg[1][0], msg[1][1], self.cached_client)
                     pithos_file.rename(msg[1][2])

@@ -39,7 +39,10 @@ class MyTableModel(QtCore.QAbstractTableModel):
         return len(self.data[self.folder])
 
     def columnCount(self, parent):
-        return len(self.data[self.folder][0])
+        if self.data[self.folder]:
+            return len(self.data[self.folder][0])
+        else:
+            return 0
 
     def data(self, index, role):
         if not index.isValid():
@@ -112,7 +115,7 @@ class ListTableDelegate(BaseDelegate):
 
     def createEditor(self, parent, option, index):
         if index.column() == 0:
-            return QtGui.QLineEdit('LOLasdasd', parent)
+            return QtGui.QLineEdit('', parent)
         else:
             return super(ListTableDelegate, self).createEditor(parent, option, index)
 
@@ -131,19 +134,22 @@ class ListTableDelegate(BaseDelegate):
 class MyTableView(QtGui.QTableView):
 
     def contextMenuEvent(self, event):
-        menu = QtGui.QMenu(self)
+        #We don't want the right click to be enabled on empty space
+        item = self.indexAt(event.pos())
+        if item.data().isValid():
+            menu = QtGui.QMenu(self)
 
-        #-----Delete menu-----
-        delete_action = menu.addAction(QtGui.QIcon('images/cancel.png'), "Delete")
-        delete_action.triggered.connect(self.onDelete)
-        #-----Move menu----
-        sub_menu = menu.addMenu(QtGui.QIcon('images/move.png'), 'Move')
-        folders = self.model().data.keys()
-        folders.remove(self.model().folder)
-        for i in folders:
-            sub_menu.addAction(str(i))
-        
-        menu.exec_(event.globalPos())
+            #-----Delete menu-----
+            delete_action = menu.addAction(QtGui.QIcon('images/cancel.png'), "Delete")
+            delete_action.triggered.connect(self.onDelete)
+            #-----Move menu----
+            sub_menu = menu.addMenu(QtGui.QIcon('images/move.png'), 'Move')
+            folders = self.model().data.keys()
+            folders.remove(self.model().folder)
+            for i in folders:
+                sub_menu.addAction(str(i))
+            
+            menu.exec_(event.globalPos())
 
     def onDelete(self):
         print 'delete'
@@ -163,6 +169,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.logger = logger.logger_factory(self.__class__.__name__)
         self.setWindowTitle(title)
+        self.setWindowIcon(QtGui.QIcon('images/pithos-small.png'))
         self.resize(500, 400)
         self.center()
         self.headers = ['File', 'Size']
@@ -170,7 +177,8 @@ class MainWindow(QtGui.QMainWindow):
         centralWidget = QtGui.QWidget()
 
         #Status bar label
-        self.sbLabel = QtGui.QLabel('Retrieving folders...')
+        self.fileCountLabel = QtGui.QLabel('Retrieving folders...')
+        self.logStatusLabel = QtGui.QLabel('Logged out')
 
         #Folder choice widgets
         self.comboBox = QtGui.QComboBox()
@@ -226,7 +234,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def _create_status_bar(self):
         sb = QtGui.QStatusBar()
-        sb.addWidget(self.sbLabel, 1)
+        sb.addWidget(self.fileCountLabel, 1)
+        sb.addWidget(self.logStatusLabel)
         self.setStatusBar(sb)
 
     def _create_table(self):
@@ -260,24 +269,31 @@ class MainWindow(QtGui.QMainWindow):
         #Called on subsequent comboBox changes
         self.table.model().set_folder(str(text))
         file_count = self.table.model().rowCount(None)
-        self.sbLabel.setText('{} file(s)'.format(file_count))
+        self.fileCountLabel.setText('{} file(s)'.format(file_count))
+        
+        #If one of the folders is empty the table isn't visible which
+        #in turn messes up the projection of the other folders' files
+        hh = self.table.horizontalHeader()
+        hh.setResizeMode(0, QtGui.QHeaderView.Stretch)
+        hh.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
 
-    def set_folders(self, folders):
-        for item in folders:
+    def set_folders(self, data):
+        for item in data[0]:
             self.comboBox.addItem(item)
-        self.table.model().add_folders(folders)
-        self.sbLabel.setText('Retrieving files...')
+        self.table.model().add_folders(data[0])
+        self.fileCountLabel.setText('Retrieving files...')
+        self.logStatusLabel.setText('Logged in as: {}'.format(data[1]))
         self.comboBox.blockSignals(False)
 
     def set_objects(self, folder_name, objects):
-        self.sbLabel.setText('Retrieving files...{}'.format(folder_name))
+        self.fileCountLabel.setText('Retrieving files...{}'.format(folder_name))
         self.table.model().set_folder_data(folder_name, objects)
 
     def set_active_folder(self):
         #Called on app initialization(No choice has been made in the comboBox)
         self.table.model().set_folder(str(self.comboBox.currentText()))
         file_count = self.table.model().rowCount(None)
-        self.sbLabel.setText('{} file(s)'.format(file_count))
+        self.fileCountLabel.setText('{} file(s)'.format(file_count))
         self.comboBox.setEnabled(True)
 
     def onExit(self):

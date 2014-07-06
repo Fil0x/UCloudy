@@ -28,30 +28,29 @@ class AuthManager(Manager):
     #exposed functions
     def authenticate(self):
         access_token = None
-        dataManager = LocalDataManager()
 
         #A KeyError will be raised if there is no token.
-        access_token = dataManager.get_token()
+        access_token = LocalDataManager().get_token()
         try:
-            dm = LocalDataManager()
             s = AstakosClient(access_token, strings.Pithos_AUTHURL)
             auth_data = s.authenticate()
+            username = auth_data['access']['user']['name']
             pithos_url = self._get_pithos_public_url(auth_data)
             uuid = auth_data['access']['user']['id']
             pithosClient = PithosClient(pithos_url, access_token, uuid)
-            pithosClient.list_containers()
+            resp = pithosClient.list_containers()
         except (AstakosErrors.Unauthorized, faults.InvalidAuth) as e:
             raise faults.InvalidAuth('Pithos-Auth')
         except (AstakosErrors.AstakosClientException, faults.NetworkError) as e:
             raise faults.NetworkError('No internet-Auth')
 
-        return pithosClient
+        return (pithosClient, username)
 
     def add_and_authenticate(self, key):
         dataManager = LocalDataManager()
         dataManager.set_credentials('Pithos', key)
         return self._pithos_auth()
-        
+
     def get_flow(self):
         return PithosFlow()
     #end of exposed functions

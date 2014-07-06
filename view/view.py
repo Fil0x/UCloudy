@@ -68,8 +68,9 @@ class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.
     def onRenameComplete(self):
         self.viewComponent.onRenameComplete()
         
-    def onSetFolders(self, folders):
-        self.viewComponent.set_folders(folders)
+    def onSetFolders(self, data):
+        #data = [folders(list), username]
+        self.viewComponent.set_folders(data)
         
     def onSetObjects(self, data):
         #data = [[folder_name, objects],...]
