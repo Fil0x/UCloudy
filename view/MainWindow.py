@@ -133,6 +133,12 @@ class ListTableDelegate(BaseDelegate):
 
 class MyTableView(QtGui.QTableView):
 
+    def __init__(self, delete_signal, move_signal, parent=None):
+        super(MyTableView, self).__init__(parent)
+        
+        self.on_delete = delete_signal
+        self.on_move = move_signal
+
     def contextMenuEvent(self, event):
         #We don't want the right click to be enabled on empty space
         item = self.indexAt(event.pos())
@@ -141,28 +147,33 @@ class MyTableView(QtGui.QTableView):
 
             #-----Delete menu-----
             delete_action = menu.addAction(QtGui.QIcon('images/cancel.png'), "Delete")
-            delete_action.triggered.connect(self.onDelete)
+            delete_action.triggered.connect(lambda: self.onDelete(item.data().toString()))
             #-----Move menu----
             sub_menu = menu.addMenu(QtGui.QIcon('images/move.png'), 'Move')
             folders = self.model().data.keys()
+            folders.remove('dummy')
             folders.remove(self.model().folder)
             for i in folders:
-                sub_menu.addAction(str(i))
+                sub_menu.addAction(str(i), lambda: self.onMove(item.data().toString()))
             
             menu.exec_(event.globalPos())
 
-    def onDelete(self):
-        print 'delete'
+    def onDelete(self, filename):
+        self.on_delete.emit(filename)
         
-    def onMove(self):
-        print 'move'
+    def onMove(self, filename):
+        #http://pyqt.sourceforge.net/Docs/PyQt4/qobject.html#sender
+        #Not an OO approach but we have a lot of signals mapping to this function
+        #As an alternative solution we could use QSignalMapper
+        new_folder = str(QtCore.QObject.sender(self).iconText())
+        self.on_move.emit([new_folder, filename])
 
 class MainWindow(QtGui.QMainWindow):
 
     font = QtGui.QFont('Tahoma', 10)
     rename_signal = QtCore.pyqtSignal(list)
     delete_signal = QtCore.pyqtSignal(str)
-    move_signal = QtCore.pyqtSignal(str)
+    move_signal = QtCore.pyqtSignal(list)
 
     def __init__(self, title, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -239,7 +250,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setStatusBar(sb)
 
     def _create_table(self):
-        tbl = MyTableView()
+        tbl = MyTableView(self.delete_signal, self.move_signal)
 
         tm = MyTableModel(self.headers, self.rename_signal, self.delete_signal,
                           self.move_signal, parent=self)
@@ -263,7 +274,13 @@ class MainWindow(QtGui.QMainWindow):
 
     def onRenameComplete(self):
         self.statusBar().showMessage('Rename Completed', 2000)
-
+        
+    def onDeleteComplete(self):
+        self.statusBar().showMessage('Deletion Completed', 2000)
+        
+    def onMoveComplete(self):
+        self.statusBar().showMessage('Move Completed', 2000)
+    
     def onSelectionChanged(self, text):
         #@Mediator
         #Called on subsequent comboBox changes

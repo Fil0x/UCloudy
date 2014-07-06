@@ -29,7 +29,7 @@ class TaskThread(threading.Thread):
         if not self.cached_client:
             self.logger.debug('No client available. Authenticating...')
             self.cached_client, self.username = self.proxy.authenticate()
-        
+
     def run(self):
         while True:
             msg = self.in_queue.get()
@@ -71,6 +71,38 @@ class TaskThread(threading.Thread):
                     pithos_file = PithosFile(msg[1][0], msg[1][1], self.cached_client)
                     pithos_file.rename(msg[1][2])
                     self.proxy.facade.sendNotification(AppFacade.AppFacade.RENAME_FILE_COMPLETED,
+                                                       [self.globals])
+                except (faults.InvalidAuth, KeyError):
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.INVALID_CREDENTIALS,
+                                                       [self.globals, id])
+                except faults.NetworkError:
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.NETWORK_ERROR,
+                                                       [self.globals, id])
+            elif msg[0] == 'delete_file':
+                try:
+                    self._authenticate()
+                    #msg[1] = [folder, filename]
+                    pithos_file = PithosFile(msg[1][0], msg[1][1], self.cached_client)
+                    pithos_file.delete()
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.DELETE_FILE_COMPLETED,
+                                                       [self.globals])
+                except (faults.InvalidAuth, KeyError):
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.INVALID_CREDENTIALS,
+                                                       [self.globals, id])
+                except faults.NetworkError:
+                    self.logger.debug('Authentication skipped')
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.NETWORK_ERROR,
+                                                       [self.globals, id])
+            elif msg[0] == 'move_file':
+                try:
+                    self._authenticate()
+                    #msg[1] = [old-folder, new-folder, filename]
+                    pithos_file = PithosFile(msg[1][0], msg[1][2], self.cached_client)
+                    pithos_file.move(msg[1][1])
+                    self.proxy.facade.sendNotification(AppFacade.AppFacade.MOVE_FILE_COMPLETED,
                                                        [self.globals])
                 except (faults.InvalidAuth, KeyError):
                     self.logger.debug('Authentication skipped')

@@ -59,8 +59,12 @@ class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.
 
         self.viewComponent.exit_action.triggered.connect(self.onExit)
         self.viewComponent.rename_signal.connect(self.onRename)
+        self.viewComponent.delete_signal.connect(self.onDelete)
+        self.viewComponent.move_signal.connect(self.onMove)
 
         self.g.signals.rename_completed.connect(self.onRenameComplete)
+        self.g.signals.delete_completed.connect(self.onDeleteComplete)
+        self.g.signals.move_completed.connect(self.onMoveComplete)
         self.g.signals.set_folders.connect(self.onSetFolders)
         self.g.signals.set_objects.connect(self.onSetObjects)
         self.g.signals.set_active_folder.connect(self.onSetActiveFolder)
@@ -68,8 +72,14 @@ class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.
     def onRenameComplete(self):
         self.viewComponent.onRenameComplete()
         
+    def onDeleteComplete(self):
+        self.viewComponent.onDeleteComplete()
+        
+    def onMoveComplete(self):
+        self.viewComponent.onMoveComplete()
+        
     def onSetFolders(self, data):
-        #data = [folders(list), username]
+        #data = [[folder1, folder2, ...], username]
         self.viewComponent.set_folders(data)
         
     def onSetObjects(self, data):
@@ -82,6 +92,17 @@ class MainWindowMediator(puremvc.patterns.mediator.Mediator, puremvc.interfaces.
     def onRename(self, data):
         #data = [container, old-filename, new-filename]
         self.facade.sendNotification(AppFacade.AppFacade.RENAME_FILE, data)
+        
+    def onDelete(self, filename):
+        folder = str(self.viewComponent.comboBox.currentText())
+        self.facade.sendNotification(AppFacade.AppFacade.DELETE_FILE, 
+                                     [folder, filename])
+        
+    def onMove(self, data):
+        #data = [new-folder, filename]
+        old_folder = str(self.viewComponent.comboBox.currentText())
+        self.facade.sendNotification(AppFacade.AppFacade.MOVE_FILE, 
+                                     [old_folder, data[0], data[1]])
         
     def onExit(self):
         self.facade.sendNotification(AppFacade.AppFacade.EXIT)

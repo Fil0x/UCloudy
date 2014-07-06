@@ -20,5 +20,12 @@ class CommCommand(puremvc.patterns.command.SimpleCommand, puremvc.interfaces.ICo
             model_proxy.rename_file(note_body)
         elif note_name == AppFacade.AppFacade.RENAME_FILE_COMPLETED:
             note_body[0].signals.rename_completed.emit()
-        
+        elif note_name == AppFacade.AppFacade.DELETE_FILE:
+            model_proxy.delete_file(note_body)
+        elif note_name == AppFacade.AppFacade.DELETE_FILE_COMPLETED:
+            note_body[0].signals.delete_completed.emit()
+        elif note_name == AppFacade.AppFacade.MOVE_FILE:
+            model_proxy.move_file(note_body)
+        elif note_name == AppFacade.AppFacade.MOVE_FILE_COMPLETED:
+            note_body[0].signals.move_completed.emit()
         

@@ -53,6 +53,14 @@ class ModelProxy(puremvc.patterns.proxy.Proxy):
     
     def rename_file(self, data):
         self.task_queue.put(['rename_file', data])
+        
+    def delete_file(self, data):
+        #data = [folder, filename]
+        self.task_queue.put(['delete_file', data])
+        
+    def move_file(self, data):
+        #data = [old-folder, new-folder, filename]
+        self.task_queue.put(['move_file', data])
      
     def authenticate(self):
         return self.model.am.authenticate()
